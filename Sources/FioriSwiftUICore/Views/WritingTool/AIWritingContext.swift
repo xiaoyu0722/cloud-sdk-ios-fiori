@@ -1,17 +1,21 @@
 import FioriThemeManager
 import Foundation
+import os.log
 import SwiftUI
 
 class AIWritingContext: ObservableObject {
-    @Published var originalValue: String
+    @Published var originalValue: NSAttributedString
     @Published var displayedValue: NSMutableAttributedString
-    @Published var originalSelectedRange: NSRange? = nil
-    @Published var selectedRange: NSRange? = nil
+    
+    @Published private var originalSelectedRange: NSRange? = nil
+    @Published private var selectedRange: NSRange? = nil
     
     @Published var inProgress: Bool = false
     @Published var isPresented: Bool = false
     
-    @Published var rewriteTextSet: [String] = []
+    @Published var isFocused: Bool = false
+
+    @Published var rewriteTextSet: [NSAttributedString] = []
     
     @Published var selection: AIWritingCommand? = nil
     
@@ -21,24 +25,28 @@ class AIWritingContext: ObservableObject {
     var indexOfCurrentValue: Int = -1
     
     var textIsChanged: Bool {
-        self.displayedValue.string != self.originalValue
+        self.displayedValue.string != self.originalValue.string
     }
     
-    init(originalValue: String) {
+    init(originalValue: NSAttributedString) {
         self.originalValue = originalValue
         self.rewriteTextSet = [originalValue]
         self.indexOfCurrentValue = 0
-        self.displayedValue = NSMutableAttributedString(string: originalValue)
-        self.displayedValue.styleAIText()
+        self.displayedValue = NSMutableAttributedString(attributedString: originalValue)
     }
     
-    func aiCommandHandler(_ actionType: AIWritingCommand) {
+    func setSelectedRange(_ range: NSRange) {
+        self.originalSelectedRange = range
+        self.selectedRange = range
+    }
+    
+    func removeSelection(_ actionType: AIWritingCommand) {
         self.lastSelection = actionType
         self.selection = nil
     }
     
     func addNewValue(_ value: String, for actionType: AIWritingCommand) {
-        self.rewriteTextSet.append(value)
+        self.rewriteTextSet.append(NSAttributedString(string: value))
         self.indexOfCurrentValue = self.rewriteTextSet.count - 1
         self.handleDisplayedAttributedString()
         self.lastSelection = actionType
@@ -61,17 +69,16 @@ class AIWritingContext: ObservableObject {
         }
     }
     
-    func modifyRange(_ range: NSRange, withString string: String) {
+    func modifyRange(_ range: NSRange, withString string: NSAttributedString) {
         self.displayedValue.replaceCharacters(in: range, with: string)
-        let newRange = NSRange(location: range.location, length: string.count)
+        let newRange = NSRange(location: range.location, length: string.length)
         self.selectedRange = newRange
-        self.displayedValue.styleAIText(newRange)
+        self.highlightAIText(newRange)
     }
     
     func revertToOriginalValue() {
         self.selectedRange = self.originalSelectedRange
-        self.displayedValue = NSMutableAttributedString(string: self.originalValue)
-        self.displayedValue.styleAIText()
+        self.displayedValue = NSMutableAttributedString(attributedString: self.originalValue)
     }
     
     func rewriteAction() {
@@ -107,12 +114,20 @@ class AIWritingContext: ObservableObject {
     func cancelAction() {
         self.revertToOriginalValue()
         self.refreshContext()
+        self.isPresented = false
     }
     
     func aiWritingDone() {
-        self.displayedValue.styleAIText()
-        self.originalValue = self.displayedValue.string
+        self.styleHighlightedAIText()
+        // trigger displayed value update manually
+        self.displayedValue = self.displayedValue
+        if let value = self.displayedValue.copy() as? NSAttributedString {
+            self.originalValue = value
+        } else {
+            os_log("copy of display value should not be failed in AIWritingContext", log: OSLog.coreLogger, type: .error)
+        }
         self.refreshContext()
+        self.isPresented = false
     }
     
     func refreshContext() {
@@ -124,23 +139,17 @@ class AIWritingContext: ObservableObject {
         self.lastSelection = nil
     }
     
-    static let enhanceText = "Enhanced aiText"
-    static let shorterText = "Shorter aiText"
-    static let longerText = "Longer aiText"
-}
-
-extension NSMutableAttributedString {
-    func styleAIText(_ tintedRange: NSRange? = nil) {
-        if let range = tintedRange {
-            self.setAttributes([.foregroundColor: UIColor(Color.preferredColor(.primaryLabel)),
-                                .font: UIFont.preferredFioriFont(forTextStyle: .body)],
-                               range: NSRange(location: 0, length: self.length))
-            self.setAttributes([.foregroundColor: UIColor(Color.preferredColor(.tintColor)),
-                                .font: UIFont.preferredFioriFont(forTextStyle: .body)], range: range)
-        } else {
-            self.setAttributes([.foregroundColor: UIColor(Color.preferredColor(.primaryLabel)),
-                                .font: UIFont.preferredFioriFont(forTextStyle: .body)],
-                               range: NSRange(location: 0, length: self.length))
+    func highlightAIText(_ tintedRange: NSRange) {
+        self.displayedValue.setAttributes([.foregroundColor: UIColor(Color.preferredColor(.tintColor)),
+                                           .font: UIFont.preferredFioriFont(forTextStyle: .body)],
+                                          range: tintedRange)
+    }
+    
+    func styleHighlightedAIText() {
+        if let range = self.selectedRange {
+            self.displayedValue.setAttributes([.foregroundColor: UIColor(Color.preferredColor(.primaryLabel)),
+                                               .font: UIFont.preferredFioriFont(forTextStyle: .body)],
+                                              range: range)
         }
     }
 }

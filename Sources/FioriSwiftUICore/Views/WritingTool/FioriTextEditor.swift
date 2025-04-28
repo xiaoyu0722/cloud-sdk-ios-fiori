@@ -4,36 +4,33 @@ import SwiftUI
 public struct FioriTextEditor: View {
     @Binding var text: String
     let aiWritingCommandHandler: (AIWritingCommand) async -> String
-    @State var showAIAssistant: Bool = false
     @StateObject private var context: AIWritingContext
-    @FocusState private var isFocused: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
+    var defaultAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor(Color.preferredColor(.primaryLabel)),
+                                                            .font: UIFont.preferredFioriFont(forTextStyle: .body)]
     public init(text: Binding<String>,
                 aiWritingCommandHandler: @escaping (AIWritingCommand) async -> String)
     {
-        _context = StateObject(wrappedValue: AIWritingContext(originalValue: text.wrappedValue))
+        _context = StateObject(wrappedValue: AIWritingContext(originalValue: NSAttributedString(string: text.wrappedValue,
+                                                                                                attributes: [.foregroundColor: UIColor(Color.preferredColor(.primaryLabel)),
+                                                                                                             .font: UIFont.preferredFioriFont(forTextStyle: .body)])))
         _text = text
         self.aiWritingCommandHandler = aiWritingCommandHandler
     }
     
-    var useSheet: Bool {
-        self.horizontalSizeClass == nil || self.horizontalSizeClass == .some(.compact)
-    }
-    
     public var body: some View {
         TextViewRepresentable {
-            self.isFocused = false
-            self.showAIAssistant = true
+            self.context.isPresented = true
+            self.context.isFocused = false
         }
         .environmentObject(self.context)
         .clipShape(.rect(cornerRadius: 8))
         .background {
             RoundedRectangle(cornerRadius: 8).stroke(Color.preferredColor(self.context.textIsChanged ? .tintColor : .separator))
         }
-        .focused(self.$isFocused)
-        .popover(isPresented: self.$showAIAssistant, attachmentAnchor: .point(.center)) {
-            WritingToolForm(isPresented: self.$showAIAssistant)
+        .popover(isPresented: self.$context.isPresented, attachmentAnchor: .point(.center)) {
+            WritingToolForm(isPresented: self.$context.isPresented)
                 .frame(idealWidth: 400, idealHeight: 400)
                 .environmentObject(self.context)
                 .presentationCompactAdaptation(.sheet)
@@ -50,25 +47,18 @@ public struct FioriTextEditor: View {
                     self.context.inProgress = false
                     self.context.addNewValue(response, for: newValue)
                 }
-                self.context.aiCommandHandler(newValue)
+                self.context.removeSelection(newValue)
             }
         }
         .onChange(of: self.context.originalValue) { _, _ in
-            self.text = self.context.originalValue
+            self.text = self.context.originalValue.string
         }
-        .onChange(of: self.showAIAssistant) { _, newValue in
-            self.context.isPresented = newValue
-            if newValue {
-                self.isFocused = false
-            } else {
-                self.context.aiWritingDone()
-                self.isFocused = true
-            }
+        .onChange(of: self.context.isPresented) { _, newValue in
+            self.context.isFocused = !newValue
         }
-        .onChange(of: self.isFocused) { _, newValue in
-            if newValue {
+        .onChange(of: self.context.isFocused) { _, newValue in
+            if newValue, self.context.isPresented {
                 self.context.aiWritingDone()
-                self.showAIAssistant = false
             }
         }
     }
@@ -101,11 +91,14 @@ struct TextViewRepresentable: UIViewRepresentable {
             self.parent = parent
         }
         
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            self.parent.writingContext.isFocused = true
+        }
+        
         func textViewDidChangeSelection(_ textView: UITextView) {
             if !self.parent.writingContext.isPresented {
                 DispatchQueue.main.async {
-                    self.parent.writingContext.originalSelectedRange = textView.selectedRange
-                    self.parent.writingContext.selectedRange = textView.selectedRange
+                    self.parent.writingContext.setSelectedRange(textView.selectedRange)
                 }
             }
         }
@@ -153,10 +146,12 @@ struct TextViewRepresentable: UIViewRepresentable {
                 HStack {
                     FioriIcon.actions.ai
                     Text("AI Writing")
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 .foregroundStyle(Color.preferredColor(.tintColor))
                 .font(Font.fiori(forTextStyle: .body, weight: .semibold))
-                .padding([.leading, .top, .bottom])
+                .padding()
             }
         }
     }
