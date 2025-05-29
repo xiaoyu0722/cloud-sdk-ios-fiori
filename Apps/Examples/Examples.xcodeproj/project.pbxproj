@@ -147,6 +147,7 @@
 		B141D6BB29261F9E008A8BD6 /* SearchableListViewExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B141D6BA29261F9E008A8BD6 /* SearchableListViewExample.swift */; };
 		B153E88E2CAA8EEA0017EB84 /* ListPickerItemExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B153E88D2CAA8EE30017EB84 /* ListPickerItemExample.swift */; };
 		B18D2E9F2988B07B000A1821 /* _KPIHeaderExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18D2E9E2988B07B000A1821 /* _KPIHeaderExample.swift */; };
+		B18C912E2DADE4930093D8D7 /* WritingAssistantExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18C912D2DADE48A0093D8D7 /* WritingAssistantExample.swift */; };
 		B18D593C2B0C52C700ABB1AD /* TabViewExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18D593B2B0C52C700ABB1AD /* TabViewExample.swift */; };
 		B190065A2C201BBE000C8B10 /* ProfileHeaderExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19006592C201BBE000C8B10 /* ProfileHeaderExample.swift */; };
 		B1A78D982C88388B00432B0D /* ShadowEffectExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A78D972C88388B00432B0D /* ShadowEffectExample.swift */; };
@@ -882,6 +883,7 @@
 		8AD9DFA425D49967007448EC /* Examples */ = {
 			isa = PBXGroup;
 			children = (
+				B18C912D2DADE48A0093D8D7 /* WritingAssistantExample.swift */,
 				8AD9DFA525D49967007448EC /* ContactItemActionItemsExample.swift */,
 				8AD9DFA625D49967007448EC /* ContactItemStateAndDataBindingExample.swift */,
 				8AD9DFA725D49967007448EC /* StylingModifierExample.swift */,
@@ -1328,6 +1330,7 @@
 				64905D092C7693970062AAD4 /* DateTimePickerExample.swift in Sources */,
 				B80DA9C2260D04FB00C0B2E9 /* SingleActionLongFollowButton.swift in Sources */,
 				8A6D64BA25AE714100D2D76C /* ExampleHighlightingStyle.swift in Sources */,
+				B18C912E2DADE4930093D8D7 /* WritingAssistantExample.swift in Sources */,
 				99942D572616980A001912C5 /* OnboardingExamples.swift in Sources */,
 				99658F882B7C359D0026A743 /* LinearProgressIndicatorExample.swift in Sources */,
 				8A557A2424C12F380098003A /* ChartDetailView.swift in Sources */,
