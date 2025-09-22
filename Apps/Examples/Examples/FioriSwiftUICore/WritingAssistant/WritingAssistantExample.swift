@@ -77,31 +77,33 @@ struct WritingAssistantExample: View {
     let feedbackOptions = ["Inaccuracies", "Repetitive or Wordy", "Inappropriate Content", "Security Risks", "Slow Response", "Others"]
     
     var body: some View {
-        List {
-            Toggle("Show Error", isOn: self.$errorOccurred)
-            NoteFormView(text: self.$text, placeholder: "NoteFormView1", errorMessage: "", hintText: AttributedString("Hint Text"), isCharCountEnabled: true, allowsBeyondLimit: false)
-                .environment(\.isLoading, self.isLoading)
-                .environment(\.isAILoading, self.isLoading)
-                .waTextInput(self.$text, menus: WAMenu.availableMenus, menuHandler: { menu, value in
-                    await self.fetchData(for: menu, value: value, withLoading: true)
-                }, feedbackOptions: self.feedbackOptions, feedbackHandler: { state, values in
-                    await self.submitFeedback(state: state, values: values)
-                })
-                .waHelperAction(self.$helperAction)
-                .frame(height: 100)
+//        List {
+//            Toggle("Show Error", isOn: self.$errorOccurred)
+        NoteFormView(text: self.$text, placeholder: "NoteFormView2", allowsBeyondLimit: false)
+
+//            NoteFormView(text: self.$text, placeholder: "NoteFormView1", errorMessage: "", hintText: AttributedString("Hint Text"), isCharCountEnabled: true, allowsBeyondLimit: false)
+            .environment(\.isLoading, self.isLoading)
+            .environment(\.isAILoading, self.isLoading)
+            .waTextInput(self.$text, menus: WAMenu.availableMenus, menuHandler: { menu, value in
+                await self.fetchData(for: menu, value: value, withLoading: true)
+            }, feedbackOptions: self.feedbackOptions, feedbackHandler: { state, values in
+                await self.submitFeedback(state: state, values: values)
+            })
+            .waHelperAction(self.$helperAction)
+            .frame(height: 100)
             
-            NoteFormView(text: self.$text2, placeholder: "NoteFormView2", allowsBeyondLimit: false)
-                .waTextInput(self.$text2, menus: WAMenu.availableMenus, menuHandler: { menu, value in
-                    await self.fetchData(for: menu, value: value)
-                }, feedbackOptions: self.feedbackOptions, feedbackHandler: { state, values in
-                    await self.submitFeedback(state: state, values: values)
-                })
-                .waHelperAction(self.$helperAction)
-                .frame(height: 100)
-            
-            Spacer()
-        }
-        .padding()
+//            NoteFormView(text: self.$text2, placeholder: "NoteFormView2", allowsBeyondLimit: false)
+//                .waTextInput(self.$text2, menus: WAMenu.availableMenus, menuHandler: { menu, value in
+//                    await self.fetchData(for: menu, value: value)
+//                }, feedbackOptions: self.feedbackOptions, feedbackHandler: { state, values in
+//                    await self.submitFeedback(state: state, values: values)
+//                })
+//                .waHelperAction(self.$helperAction)
+//                .frame(height: 100)
+//
+//            Spacer()
+//        }
+//        .padding()
     }
 }
 
@@ -168,4 +170,107 @@ extension WAMenu {
     static let italian = WAMenu(title: "Italian")
     /// Menu for Chinese language translation.
     static let chinese = WAMenu(title: "Chinese")
+}
+
+#Preview {
+    TestVC()
+}
+
+class TestVC: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        let button = UIButton(type: .system)
+        button.setTitle("Show TableView", for: .normal)
+        button.addTarget(self, action: #selector(self.showTableView), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(button)
+        NSLayoutConstraint.activate([
+            button.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
+            button.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
+        ])
+    }
+    
+    @objc func showTableView() {
+        let tableVC = TTTTTVC()
+        let navController = UINavigationController(rootViewController: tableVC)
+        self.present(navController, animated: true, completion: nil)
+    }
+}
+
+class TTTTTVC: UITableViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.estimatedRowHeight = 44
+
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "WritingAssistantCellContentApproach")
+        self.tableView.register(WritingAssistantTableViewCell.self, forCellReuseIdentifier: WritingAssistantTableViewCell.reuseIdentifier)
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: WritingAssistantTableViewCell.reuseIdentifier, for: indexPath) as! WritingAssistantTableViewCell
+        cell.configure(text: "value", parentViewController: self) { _ in
+            () // TODO:
+        }
+        return cell
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        1
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        1
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        200
+    }
+}
+
+class WritingAssistantTableViewCell: UITableViewCell {
+    static let reuseIdentifier = "WritingAssistantTableViewCell"
+    private var hostingController: UIHostingController<WritingAssistantExample>?
+    private weak var parentViewController: UIViewController?
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        if let host = hostingController {
+            host.willMove(toParent: nil)
+            host.view.removeFromSuperview()
+            host.removeFromParent()
+            self.hostingController = nil
+        }
+    }
+
+    func configure(text: String,
+                   placeholder: String = "Write here...",
+                   parentViewController: UIViewController,
+                   onTextChange: @escaping (String) -> Void)
+    {
+        self.parentViewController = parentViewController
+
+        let rootView = WritingAssistantExample()
+
+        if self.hostingController == nil {
+            let host = UIHostingController(rootView: rootView)
+            // host.view.backgroundColor = .clear
+            parentViewController.addChild(host)
+            contentView.addSubview(host.view)
+            host.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                host.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                host.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                host.view.topAnchor.constraint(equalTo: contentView.topAnchor),
+                host.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            ])
+            host.didMove(toParent: parentViewController)
+            self.hostingController = host
+        } else {
+            self.hostingController?.rootView = rootView
+        }
+
+        selectionStyle = .none
+    }
 }
