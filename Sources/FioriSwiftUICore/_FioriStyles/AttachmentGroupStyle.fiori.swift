@@ -17,7 +17,7 @@ public struct AttachmentGroupBaseStyle: AttachmentGroupStyle {
                 .accessibilityHint(configuration.controlState == .readOnly ? "ready only".localizedFioriString() : "actions available".localizedFioriString())
                 .padding(.bottom, AttachmentConstants.extraTitleBottomPadding)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: AttachmentConstants.thumbnailWidth), alignment: .top), count: 1), spacing: AttachmentConstants.cellVerticalSpacing) {
+            LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: AttachmentConstants.thumbnailWidth), alignment: .topLeading), count: 1), spacing: AttachmentConstants.cellVerticalSpacing) {
                 if configuration.controlState != .readOnly {
                     if let maxCount = configuration.maxCount {
                         if maxCount > configuration.attachments.count {
